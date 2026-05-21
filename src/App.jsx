@@ -112,7 +112,7 @@ function BettingTab() {
 
   if (!APPS_SCRIPT_URL) return <div className="card setup-card"><AlertTriangle/><h2>Wklej link do Apps Script</h2><p>W pliku <b>src/App.jsx</b> ustaw:</p><pre>{`const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TWOJ_ID/exec';`}</pre><p>Potem wrzuć zmianę na GitHub i zrób redeploy w Vercel.</p></div>;
 
- return <div className="betting-layout"><div className="card login-side"><p>Wpisz gracza i kod. Panel zapisze typy bezpośrednio do Twojego Google Sheeta.</p><label>Gracz</label><input value={player} onChange={(e)=>setPlayer(e.target.value)} placeholder="np. Mati"/><label>Kod gracza</label><input value={code} onChange={(e)=>setCode(e.target.value)} placeholder="np. abc123"/><p className="hint">Możesz też zostawić pola puste i wpisać dane w panelu.</p></div><div className="iframe-card"><iframe title="Panel gracza" src={iframeUrl || APPS_SCRIPT_URL}/></div></div>;
+ return <div className="betting-layout"><div className="card login-side"><div className="iframe-card"><iframe title="Panel gracza" src={iframeUrl || APPS_SCRIPT_URL}/></div></div>;
 }
 
 export default function App() {
