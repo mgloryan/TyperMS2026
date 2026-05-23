@@ -66,6 +66,31 @@ function formatNumber(n) {
   return Number(n || 0).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function normalizeDashboardData(raw) {
+  const ranking = (raw.ranking || []).map((r) => ({
+    gracz: r.gracz ?? r.Gracz ?? '',
+    punkty: Number(r.punkty ?? r.Punkty ?? 0),
+    punkty_typy: Number(r.punkty_typy ?? r['Punkty typy'] ?? 0),
+    punkty_zdarzenia: Number(r.punkty_zdarzenia ?? r['Punkty zdarzenia'] ?? 0),
+    punkty_turniejowe: Number(r.punkty_turniejowe ?? r['Punkty turniejowe'] ?? 0),
+    trafione: Number(r.trafione ?? r.Trafione ?? 0),
+    nietrafione: Number(r.nietrafione ?? r.Nietrafione ?? 0),
+    brak_typow: Number(r.brak_typow ?? r['Brak typów'] ?? 0),
+    typy: Number(r.typy ?? r['Typy rozegrane'] ?? r.Typy ?? 0),
+    skutecznosc: Number(r.skutecznosc ?? r['Skuteczność %'] ?? 0) <= 1
+  ? Number(r.skutecznosc ?? r['Skuteczność %'] ?? 0) * 100
+  : Number(r.skutecznosc ?? r['Skuteczność %'] ?? 0),
+    najwyzszy_kurs: Number(r.najwyzszy_kurs ?? r['Najwyższy trafiony kurs'] ?? r['Najwyższy kurs'] ?? 0),
+    seria: Number(r.seria ?? r.Seria ?? 0),
+    ostatnio: Number(r.ostatnio ?? r.Ostatnio ?? 0),
+  }));
+
+  return {
+    ...raw,
+    ranking,
+  };
+}
+
 function StatCard({ icon: Icon, label, value, sub }) {
   return <div className="stat-card"><div className="stat-icon"><Icon size={24}/></div><div><p>{label}</p><strong>{value}</strong>{sub ? <span>{sub}</span> : null}</div></div>;
 }
@@ -222,7 +247,8 @@ export default function App() {
     try {
       const res = await jsonp(APPS_SCRIPT_URL, { api: 'publicData' });
       if (!res || res.ok === false) throw new Error(res?.error || 'Błąd danych');
-      setData({ ...MOCK_DATA, ...res });
+      const normalized = normalizeDashboardData(res);
+setData({ ...MOCK_DATA, ...normalized });
     } catch (e) {
       setError(e.message || String(e));
     } finally {
