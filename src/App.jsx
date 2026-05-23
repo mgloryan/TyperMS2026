@@ -67,27 +67,81 @@ function formatNumber(n) {
 }
 
 function normalizeDashboardData(raw) {
-  const ranking = (raw.ranking || []).map((r) => ({
-    gracz: r.gracz ?? r.Gracz ?? '',
-    punkty: Number(r.punkty ?? r.Punkty ?? 0),
-    punkty_typy: Number(r.punkty_typy ?? r['Punkty typy'] ?? 0),
-    punkty_zdarzenia: Number(r.punkty_zdarzenia ?? r['Punkty zdarzenia'] ?? 0),
-    punkty_turniejowe: Number(r.punkty_turniejowe ?? r['Punkty turniejowe'] ?? 0),
-    trafione: Number(r.trafione ?? r.Trafione ?? 0),
-    nietrafione: Number(r.nietrafione ?? r.Nietrafione ?? 0),
-    brak_typow: Number(r.brak_typow ?? r['Brak typów'] ?? 0),
-    typy: Number(r.typy ?? r['Typy rozegrane'] ?? r.Typy ?? 0),
-    skutecznosc: Number(r.skutecznosc ?? r['Skuteczność %'] ?? 0) <= 1
-  ? Number(r.skutecznosc ?? r['Skuteczność %'] ?? 0) * 100
-  : Number(r.skutecznosc ?? r['Skuteczność %'] ?? 0),
-    najwyzszy_kurs: Number(r.najwyzszy_kurs ?? r['Najwyższy trafiony kurs'] ?? r['Najwyższy kurs'] ?? 0),
-    seria: Number(r.seria ?? r.Seria ?? 0),
-    ostatnio: Number(r.ostatnio ?? r.Ostatnio ?? 0),
-  }));
+  const hits = raw.najlepszeTrafienia || raw.hits || [];
+
+  const bestHitByPlayer = {};
+  hits.forEach((h) => {
+    const gracz = h.Gracz ?? h.gracz ?? '';
+    const kurs = Number(h.Kurs ?? h.kurs ?? h['Typ kurs'] ?? 0);
+    const punkty = Number(h.Punkty ?? h.punkty ?? 0);
+
+    if (!gracz) return;
+
+    const value = kurs || punkty || 0;
+
+    if (!bestHitByPlayer[gracz] || value > bestHitByPlayer[gracz]) {
+      bestHitByPlayer[gracz] = value;
+    }
+  });
+
+  const ranking = (raw.ranking || [])
+    .map((r) => {
+      const gracz = r.gracz ?? r.Gracz ?? '';
+
+      const punkty = Number(r.punkty ?? r.Punkty ?? 0);
+      const trafione = Number(r.trafione ?? r.Trafione ?? 0);
+      const typy = Number(
+        r.typy ??
+        r.Typy ??
+        r['Typy rozegrane'] ??
+        r['Typy rozegrane '] ??
+        0
+      );
+
+      let skutecznoscRaw = r.skutecznosc ?? r['Skuteczność %'] ?? r['Skutecznosc %'] ?? '';
+
+      let skutecznosc = Number(skutecznoscRaw);
+
+      if (!skutecznosc && typy > 0) {
+        skutecznosc = (trafione / typy) * 100;
+      } else if (skutecznosc > 0 && skutecznosc <= 1) {
+        skutecznosc = skutecznosc * 100;
+      }
+
+      const najwyzszyKurs = Number(
+        r.najwyzszy_kurs ??
+        r['Najwyższy trafiony kurs'] ??
+        r['Najwyższy kurs'] ??
+        bestHitByPlayer[gracz] ??
+        0
+      );
+
+      return {
+        gracz,
+        punkty,
+        punkty_typy: Number(r.punkty_typy ?? r['Punkty typy'] ?? 0),
+        punkty_zdarzenia: Number(r.punkty_zdarzenia ?? r['Punkty zdarzenia'] ?? 0),
+        punkty_turniejowe: Number(r.punkty_turniejowe ?? r['Punkty turniejowe'] ?? 0),
+        trafione,
+        nietrafione: Number(r.nietrafione ?? r.Nietrafione ?? 0),
+        brak_typow: Number(r.brak_typow ?? r['Brak typów'] ?? 0),
+        typy,
+        skutecznosc,
+        najwyzszy_kurs: najwyzszyKurs,
+        seria: Number(r.seria ?? r.Seria ?? 0),
+        ostatnio: Number(r.ostatnio ?? r.Ostatnio ?? 0),
+      };
+    })
+    .filter((r) => r.gracz);
 
   return {
     ...raw,
     ranking,
+    hits: raw.najlepszeTrafienia || raw.hits || [],
+    bonuses: raw.zdarzenia || raw.bonuses || [],
+    matches: raw.statystykiMeczow || raw.matches || raw.mecze || [],
+    players: raw.statystykiGraczy || raw.players || ranking,
+    prizePool: raw.pula?.[0] || raw.prizePool || MOCK_DATA.prizePool,
   };
 }
 
