@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Trophy, Target, Flame, Coins, CalendarDays, ShieldCheck, LogIn, Medal, RefreshCw, Users, AlertTriangle, Eye } from 'lucide-react';
+import { Trophy, Target, Flame, Coins, CalendarDays, ShieldCheck, LogIn, Medal, RefreshCw, Users, AlertTriangle, Eye, LineChart } from 'lucide-react';
 
 // =====================================================
 // TEPER MŚ 2026 — DASHBOARD LIVE + TYPOWANIE
@@ -260,7 +260,7 @@ function Tabs({ tab, setTab }) {
     ["types", "Typy", Eye],
     ['hits', 'Trafienia', Target],
     ['bonuses', 'Side bety', ShieldCheck],
-    ['players', 'Gracze', Users],
+    ['charts', 'Wykresy', LineChart],
     ['pool', 'Pula', Coins],
     ['betting', 'Typowanie', LogIn],
   ];
@@ -463,6 +463,199 @@ function TypesTab({ data }) {
   );
 }
 
+function ChartsTab({ data }) {
+  const rows = data?.historiaPunktow || [];
+
+  const parsedRows = rows
+    .map((row) => ({
+      matchId: Number(row['Match ID'] ?? row.matchId ?? 0),
+      mecz: row.Mecz ?? row.mecz ?? '',
+      etap: row.Etap ?? row.Data ?? row.etap ?? '',
+      gracz: row.Gracz ?? row.gracz ?? '',
+      punktyMecz: Number(row['Punkty mecz'] ?? row.punktyMecz ?? 0),
+      punktyNarastajaco: Number(row['Punkty narastająco'] ?? row.punktyNarastajaco ?? 0),
+    }))
+    .filter((row) => row.gracz && row.matchId);
+
+  const players = [...new Set(parsedRows.map((row) => row.gracz))];
+
+  const matchIds = [...new Set(parsedRows.map((row) => row.matchId))]
+    .sort((a, b) => a - b);
+
+  if (!parsedRows.length) {
+    return (
+      <div className="card">
+        <h2>Wykresy</h2>
+        <p className="muted">
+          Brak danych w arkuszu PUBLIC_HISTORIA_PUNKTOW.
+        </p>
+      </div>
+    );
+  }
+
+  const width = 900;
+  const height = 360;
+  const padding = 44;
+
+  const allPoints = parsedRows.map((row) => row.punktyNarastajaco);
+  const minY = Math.min(0, ...allPoints);
+  const maxY = Math.max(1, ...allPoints);
+
+  const xFor = (matchId) => {
+    if (matchIds.length <= 1) return padding;
+    const index = matchIds.indexOf(matchId);
+    return padding + (index / (matchIds.length - 1)) * (width - padding * 2);
+  };
+
+  const yFor = (value) => {
+    if (maxY === minY) return height / 2;
+    return height - padding - ((value - minY) / (maxY - minY)) * (height - padding * 2);
+  };
+
+  const palette = [
+    '#0f172a',
+    '#2563eb',
+    '#16a34a',
+    '#dc2626',
+    '#9333ea',
+    '#ea580c',
+    '#0891b2',
+    '#be123c',
+  ];
+
+  const series = players.map((player, index) => {
+    const playerRows = parsedRows
+      .filter((row) => row.gracz === player)
+      .sort((a, b) => a.matchId - b.matchId);
+
+    const points = playerRows
+      .map((row) => `${xFor(row.matchId)},${yFor(row.punktyNarastajaco)}`)
+      .join(' ');
+
+    const last = playerRows[playerRows.length - 1];
+
+    return {
+      player,
+      points,
+      color: palette[index % palette.length],
+      lastPoints: last?.punktyNarastajaco ?? 0,
+    };
+  });
+
+  const leadersByMatch = matchIds.map((matchId) => {
+    const rowsForMatch = parsedRows.filter((row) => row.matchId === matchId);
+    const leader = rowsForMatch
+      .slice()
+      .sort((a, b) => b.punktyNarastajaco - a.punktyNarastajaco)[0];
+
+    return {
+      matchId,
+      mecz: leader?.mecz || '',
+      gracz: leader?.gracz || '',
+      punkty: leader?.punktyNarastajaco ?? 0,
+    };
+  });
+
+  return (
+    <div className="charts-page">
+      <div className="card chart-card">
+        <div className="card-head">
+          <LineChart size={20} />
+          <h2>Historia punktów</h2>
+        </div>
+
+        <p className="muted">
+          Wykres pokazuje punkty narastająco po kolejnych meczach.
+        </p>
+
+        <div className="chart-wrap">
+          <svg viewBox={`0 0 ${width} ${height}`} className="points-chart">
+            <line
+              x1={padding}
+              y1={height - padding}
+              x2={width - padding}
+              y2={height - padding}
+              className="axis-line"
+            />
+
+            <line
+              x1={padding}
+              y1={padding}
+              x2={padding}
+              y2={height - padding}
+              className="axis-line"
+            />
+
+            {matchIds.map((matchId) => (
+              <line
+                key={matchId}
+                x1={xFor(matchId)}
+                y1={padding}
+                x2={xFor(matchId)}
+                y2={height - padding}
+                className="grid-line"
+              />
+            ))}
+
+            {series.map((s) => (
+              <polyline
+                key={s.player}
+                points={s.points}
+                fill="none"
+                stroke={s.color}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
+          </svg>
+        </div>
+
+        <div className="chart-legend">
+          {series.map((s) => (
+            <div className="legend-item" key={s.player}>
+              <span style={{ background: s.color }} />
+              <b>{s.player}</b>
+              <em>{formatNumber(s.lastPoints)} pkt</em>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card table-card">
+        <div className="card-head">
+          <Trophy size={20} />
+          <h2>Lider po każdym meczu</h2>
+        </div>
+
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Mecz</th>
+                <th>Spotkanie</th>
+                <th>Lider</th>
+                <th className="right">Punkty</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {leadersByMatch.map((row) => (
+                <tr key={row.matchId}>
+                  <td>#{row.matchId}</td>
+                  <td>{row.mecz || '—'}</td>
+                  <td><b>{row.gracz || '—'}</b></td>
+                  <td className="right">{formatNumber(row.punkty)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [tab, setTab] = useState('ranking');
   const [data, setData] = useState(MOCK_DATA);
@@ -497,5 +690,5 @@ setData({ ...MOCK_DATA, ...normalized });
   .sort((a, b) => Number(b.kurs) - Number(a.kurs))[0];
   const bestStreak = [...ranking].sort((a,b)=>Number(b.seria)-Number(a.seria))[0];
 
-  return <main className="page"><section className="hero"><div className="pill-main">🏆 TYPER MŚ 2026</div><h1>Panel turnieju</h1><p>Statystyki, ranking, mecze, side bety i zakładka typowania podpięte pod Twój Google Sheet.</p><button className="refresh" onClick={loadData}><RefreshCw size={16}/> {loading ? 'Odświeżanie...' : 'Odśwież dane'}</button>{error ? <div className="error-box">{error}</div> : null}<div className="updated">Ostatnia aktualizacja: {data.meta?.updatedAt || '—'}</div></section><section className="stats"><StatCard icon={Trophy} label="Lider" value={leader?.gracz || '—'} sub={`${formatNumber(leader?.punkty)} pkt`}/><StatCard icon={Target} label="Najwyższy trafiony kurs" value={bestHit ? formatNumber(bestHit.kurs) : '—'} sub={bestHit ? `${bestHit.gracz} — ${bestHit.mecz}` : 'Brak'}/><StatCard icon={Flame} label="Najdłuższa seria" value={bestStreak ? `${bestStreak.seria || 0}` : '—'} sub={bestStreak?.gracz || ''}/><StatCard icon={Coins} label="Pula" value={`${formatNumber(pool.pula)} zł`} sub={`${pool.gracze || 0} graczy`}/></section><Tabs tab={tab} setTab={setTab}/>{tab === 'ranking' && <Ranking ranking={ranking}/>} {tab === 'matches' && <Matches matches={data.matches || []}/>} {tab === 'hits' && <SimpleTable title="Najlepsze trafienia" icon={Target} rows={data.hits || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'typ',label:'Typ'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'bonuses' && <SimpleTable title="Side bety" icon={ShieldCheck} rows={data.bonuses || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'zdarzenie',label:'Zdarzenie'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'status',label:'Status'},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'players' && <SimpleTable title="Gracze" icon={Users} rows={data.players || []} columns={[{key:'gracz',label:'Gracz'},{key:'typy',label:'Typy',right:true},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'pool' && <div className="pool-grid"><div className="card"><h2>Pula nagród</h2><p className="big-money">{formatNumber(pool.pula)} zł</p><p>{pool.gracze || 0} graczy × {formatNumber(pool.wpisowe || 100)} zł + {formatNumber(pool.rebuy || 0)} zł re-buyów</p></div><div className="card"><h2>Podział przykładowy</h2>{[['1. miejsce',35],['2. miejsce',15],['3. miejsce',5],['Etapy',30],['Bonusy',15]].map(([name,p])=><div className="split-row" key={name}><span>{name}</span><b>{formatNumber(Number(pool.pula||0)*p/100)} zł</b></div>)}</div></div>} {tab === 'betting' && <BettingTab/>} {tab === "types" && <TypesTab data={data} />}</main>;
+  return <main className="page"><section className="hero"><div className="pill-main">🏆 TYPER MŚ 2026</div><h1>Panel turnieju</h1><p>Statystyki, ranking, mecze, side bety i zakładka typowania podpięte pod Twój Google Sheet.</p><button className="refresh" onClick={loadData}><RefreshCw size={16}/> {loading ? 'Odświeżanie...' : 'Odśwież dane'}</button>{error ? <div className="error-box">{error}</div> : null}<div className="updated">Ostatnia aktualizacja: {data.meta?.updatedAt || '—'}</div></section><section className="stats"><StatCard icon={Trophy} label="Lider" value={leader?.gracz || '—'} sub={`${formatNumber(leader?.punkty)} pkt`}/><StatCard icon={Target} label="Najwyższy trafiony kurs" value={bestHit ? formatNumber(bestHit.kurs) : '—'} sub={bestHit ? `${bestHit.gracz} — ${bestHit.mecz}` : 'Brak'}/><StatCard icon={Flame} label="Najdłuższa seria" value={bestStreak ? `${bestStreak.seria || 0}` : '—'} sub={bestStreak?.gracz || ''}/><StatCard icon={Coins} label="Pula" value={`${formatNumber(pool.pula)} zł`} sub={`${pool.gracze || 0} graczy`}/></section><Tabs tab={tab} setTab={setTab}/>{tab === 'ranking' && <Ranking ranking={ranking}/>} {tab === 'matches' && <Matches matches={data.matches || []}/>} {tab === 'hits' && <SimpleTable title="Najlepsze trafienia" icon={Target} rows={data.hits || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'typ',label:'Typ'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'bonuses' && <SimpleTable title="Side bety" icon={ShieldCheck} rows={data.bonuses || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'zdarzenie',label:'Zdarzenie'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'status',label:'Status'},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'charts' && <ChartsTab data={data} />} {tab === 'pool' && <div className="pool-grid"><div className="card"><h2>Pula nagród</h2><p className="big-money">{formatNumber(pool.pula)} zł</p><p>{pool.gracze || 0} graczy × {formatNumber(pool.wpisowe || 100)} zł + {formatNumber(pool.rebuy || 0)} zł re-buyów</p></div><div className="card"><h2>Podział przykładowy</h2>{[['1. miejsce',35],['2. miejsce',15],['3. miejsce',5],['Etapy',30],['Bonusy',15]].map(([name,p])=><div className="split-row" key={name}><span>{name}</span><b>{formatNumber(Number(pool.pula||0)*p/100)} zł</b></div>)}</div></div>} {tab === 'betting' && <BettingTab/>} {tab === "types" && <TypesTab data={data} />}</main>;
 }
