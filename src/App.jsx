@@ -260,7 +260,80 @@ function Ranking({ ranking }) {
 }
 
 function Matches({ matches }) {
-  return <div className="match-grid">{matches.map((m) => { const total = Number(m.typ1)+Number(m.typx)+Number(m.typ2) || 1; return <div className="card match-card" key={m.id}><div className="match-top"><div><span className="muted">{m.etap} · #{m.id}</span><h3>{m.mecz}</h3><p>{m.start}</p></div><Badge type={String(m.status).includes('ZAKO') ? 'good' : String(m.status).includes('OTWAR') ? 'good' : 'wait'}>{m.status || '—'}</Badge></div><div className="odds-line"><span>1: {formatNumber(m.kurs1)}</span><span>X: {formatNumber(m.kursX)}</span><span>2: {formatNumber(m.kurs2)}</span></div>{[['1',m.typ1],['X',m.typx],['2',m.typ2]].map(([label,val]) => <div className="bar-row" key={label}><div><span>Typ {label}</span><b>{val || 0}</b></div><div className="bar"><i style={{width:`${(Number(val||0)/total)*100}%`}}/></div></div>)}<p><span className="muted">Wynik:</span> <b>{m.wynik || '—'}</b></p><p><span className="muted">Najlepiej:</span> <b>{m.najlepszy || '—'}</b></p></div> })}</div>;
+  return (
+    <div className="match-grid">
+      {matches.map((m) => {
+        const total = Number(m.typ1) + Number(m.typx) + Number(m.typ2) || 1;
+
+        const isFinished =
+          String(m.status || '').toUpperCase().includes('ZAKO') ||
+          String(m.wynik || '').trim() !== '';
+
+        return (
+          <div className="card match-card" key={m.id}>
+            <div className="match-top">
+              <div>
+                <span className="muted">{m.etap} · #{m.id}</span>
+                <h3>{m.mecz}</h3>
+                <p>{m.start}</p>
+              </div>
+
+              <Badge
+                type={
+                  String(m.status).includes('ZAKO')
+                    ? 'good'
+                    : String(m.status).includes('OTWAR')
+                      ? 'good'
+                      : 'wait'
+                }
+              >
+                {m.status || '—'}
+              </Badge>
+            </div>
+
+            <div className="odds-line">
+              <span>1: {formatNumber(m.kurs1)}</span>
+              <span>X: {formatNumber(m.kursX)}</span>
+              <span>2: {formatNumber(m.kurs2)}</span>
+            </div>
+
+            {isFinished ? (
+              <>
+                {[
+                  ['1', m.typ1],
+                  ['X', m.typx],
+                  ['2', m.typ2],
+                ].map(([label, val]) => (
+                  <div className="bar-row" key={label}>
+                    <div>
+                      <span>Typ {label}</span>
+                      <b>{val || 0}</b>
+                    </div>
+
+                    <div className="bar">
+                      <i style={{ width: `${(Number(val || 0) / total) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+
+                <p>
+                  <span className="muted">Wynik:</span> <b>{m.wynik || '—'}</b>
+                </p>
+
+                <p>
+                  <span className="muted">Najlepiej:</span> <b>{m.najlepszy || '—'}</b>
+                </p>
+              </>
+            ) : (
+              <div className="hidden-types-box">
+                Typy graczy będą widoczne po zakończeniu meczu.
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function SimpleTable({ title, icon: Icon, columns, rows }) {
