@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Trophy, Target, Flame, Coins, CalendarDays, ShieldCheck, LogIn, Medal, RefreshCw, Users, AlertTriangle } from 'lucide-react';
+import { Trophy, Target, Flame, Coins, CalendarDays, ShieldCheck, LogIn, Medal, RefreshCw, Users, AlertTriangle, Eye } from 'lucide-react';
 
 // =====================================================
 // TEPER MŚ 2026 — DASHBOARD LIVE + TYPOWANIE
