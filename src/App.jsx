@@ -66,6 +66,18 @@ function formatNumber(n) {
   return Number(n || 0).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function toNumber(value) {
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'number') return value;
+
+  const normalized = String(value)
+    .replace(/\s/g, '')
+    .replace(',', '.');
+
+  const number = Number(normalized);
+  return Number.isNaN(number) ? 0 : number;
+}
+
 function normalizeDashboardData(raw) {
   const hits = raw.najlepszeTrafienia || raw.hits || [];
   const history = raw.historiaPunktow || raw.historia || [];
@@ -229,8 +241,8 @@ const matches = meczeBase
     mecz: h.mecz ?? h.Mecz ?? '',
     etap: h.etap ?? h.Etap ?? '',
     typ: h.typ ?? h.Typ ?? '',
-    kurs: Number(h.kurs ?? h.Kurs ?? 0),
-    punkty: Number(h.punkty ?? h.Punkty ?? 0),
+    kurs: toNumber(h.kurs ?? h.Kurs ?? h['Kurs typu'] ?? h['Typ kurs'] ?? 0),
+    punkty: toNumber(h.punkty ?? h.Punkty ?? 0),
   }))
   .filter((h) => h.gracz || h.mecz || h.typ);
 
@@ -685,9 +697,10 @@ setData({ ...MOCK_DATA, ...normalized });
   .map((h) => ({
     gracz: h.gracz ?? h.Gracz ?? '',
     mecz: h.mecz ?? h.Mecz ?? '',
-    kurs: Number(h.kurs ?? h.Kurs ?? h.Punkty ?? h.punkty ?? 0),
+    kurs: toNumber(h.kurs ?? h.Kurs ?? h['Kurs typu'] ?? h['Typ kurs'] ?? h.Punkty ?? h.punkty ?? 0),
   }))
-  .sort((a, b) => Number(b.kurs) - Number(a.kurs))[0];
+  .filter((h) => h.gracz || h.mecz || h.kurs > 0)
+  .sort((a, b) => b.kurs - a.kurs)[0];
   const bestStreak = [...ranking].sort((a,b)=>Number(b.seria)-Number(a.seria))[0];
 
   return <main className="page"><section className="hero"><div className="pill-main">🏆 TYPER MŚ 2026</div><h1>Panel turnieju</h1><p>Statystyki, ranking, mecze, side bety i zakładka typowania podpięte pod Twój Google Sheet.</p><button className="refresh" onClick={loadData}><RefreshCw size={16}/> {loading ? 'Odświeżanie...' : 'Odśwież dane'}</button>{error ? <div className="error-box">{error}</div> : null}<div className="updated">Ostatnia aktualizacja: {data.meta?.updatedAt || '—'}</div></section><section className="stats"><StatCard icon={Trophy} label="Lider" value={leader?.gracz || '—'} sub={`${formatNumber(leader?.punkty)} pkt`}/><StatCard icon={Target} label="Najwyższy trafiony kurs" value={bestHit ? formatNumber(bestHit.kurs) : '—'} sub={bestHit ? `${bestHit.gracz} — ${bestHit.mecz}` : 'Brak'}/><StatCard icon={Flame} label="Najdłuższa seria" value={bestStreak ? `${bestStreak.seria || 0}` : '—'} sub={bestStreak?.gracz || ''}/><StatCard icon={Coins} label="Pula" value={`${formatNumber(pool.pula)} zł`} sub={`${pool.gracze || 0} graczy`}/></section><Tabs tab={tab} setTab={setTab}/>{tab === 'ranking' && <Ranking ranking={ranking}/>} {tab === 'matches' && <Matches matches={data.matches || []}/>} {tab === 'hits' && <SimpleTable title="Najlepsze trafienia" icon={Target} rows={data.hits || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'typ',label:'Typ'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'bonuses' && <SimpleTable title="Side bety" icon={ShieldCheck} rows={data.bonuses || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'zdarzenie',label:'Zdarzenie'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'status',label:'Status'},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'charts' && <ChartsTab data={data} />} {tab === 'pool' && <div className="pool-grid"><div className="card"><h2>Pula nagród</h2><p className="big-money">{formatNumber(pool.pula)} zł</p><p>{pool.gracze || 0} graczy × {formatNumber(pool.wpisowe || 100)} zł + {formatNumber(pool.rebuy || 0)} zł re-buyów</p></div><div className="card"><h2>Podział przykładowy</h2>{[['1. miejsce',35],['2. miejsce',15],['3. miejsce',5],['Etapy',30],['Bonusy',15]].map(([name,p])=><div className="split-row" key={name}><span>{name}</span><b>{formatNumber(Number(pool.pula||0)*p/100)} zł</b></div>)}</div></div>} {tab === 'betting' && <BettingTab/>} {tab === "types" && <TypesTab data={data} />}</main>;
