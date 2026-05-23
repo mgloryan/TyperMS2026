@@ -190,15 +190,35 @@ function normalizeDashboardData(raw) {
     })
     .filter((r) => r.gracz);
 
-  return {
-    ...raw,
-    ranking,
-    hits: raw.najlepszeTrafienia || raw.hits || [],
-    bonuses: raw.zdarzenia || raw.bonuses || [],
-    matches: raw.statystykiMeczow || raw.matches || raw.mecze || [],
-    players: raw.statystykiGraczy || raw.players || ranking,
-    prizePool: raw.pula?.[0] || raw.prizePool || MOCK_DATA.prizePool,
-  };
+  const sourceMatches = raw.statystykiMeczow || raw.matches || raw.mecze || [];
+
+const matches = sourceMatches
+  .map((m) => ({
+    id: m.id ?? m.ID ?? m['Match ID'] ?? '',
+    mecz: m.mecz ?? m.Mecz ?? '',
+    etap: m.etap ?? m.Etap ?? '',
+    start: m.start ?? m.Start ?? m['Data startu'] ?? '',
+    kurs1: Number(m.kurs1 ?? m['Kurs 1'] ?? 0),
+    kursX: Number(m.kursX ?? m['Kurs X'] ?? 0),
+    kurs2: Number(m.kurs2 ?? m['Kurs 2'] ?? 0),
+    wynik: m.wynik ?? m.Wynik ?? m['Wynik 1/X/2'] ?? '',
+    status: m.status ?? m.Status ?? '',
+    typ1: Number(m.typ1 ?? m['Typy 1'] ?? 0),
+    typx: Number(m.typx ?? m.typX ?? m['Typy X'] ?? 0),
+    typ2: Number(m.typ2 ?? m['Typy 2'] ?? 0),
+    najlepszy: m.najlepszy ?? m['Najlepszy gracz'] ?? '—',
+  }))
+  .filter((m) => m.id || m.mecz);
+
+return {
+  ...raw,
+  ranking,
+  hits: raw.najlepszeTrafienia || raw.hits || [],
+  bonuses: raw.zdarzenia || raw.bonuses || [],
+  matches,
+  players: raw.statystykiGraczy || raw.players || ranking,
+  prizePool: raw.pula?.[0] || raw.prizePool || MOCK_DATA.prizePool,
+};
 }
 
 function StatCard({ icon: Icon, label, value, sub }) {
@@ -371,7 +391,13 @@ setData({ ...MOCK_DATA, ...normalized });
   const ranking = useMemo(() => [...(data.ranking || [])].sort((a,b)=>Number(b.punkty)-Number(a.punkty)), [data.ranking]);
   const leader = ranking[0];
   const pool = data.prizePool || { pula: 0, rebuy: 0, gracze: 0, wpisowe: 100 };
-  const bestHit = [...(data.hits || [])].sort((a,b)=>Number(b.kurs)-Number(a.kurs))[0];
+  const bestHit = [...(data.hits || [])]
+  .map((h) => ({
+    gracz: h.gracz ?? h.Gracz ?? '',
+    mecz: h.mecz ?? h.Mecz ?? '',
+    kurs: Number(h.kurs ?? h.Kurs ?? h.Punkty ?? h.punkty ?? 0),
+  }))
+  .sort((a, b) => Number(b.kurs) - Number(a.kurs))[0];
   const bestStreak = [...ranking].sort((a,b)=>Number(b.seria)-Number(a.seria))[0];
 
   return <main className="page"><section className="hero"><div className="pill-main">🏆 TYPER MŚ 2026</div><h1>Panel turnieju</h1><p>Statystyki, ranking, mecze, side bety i zakładka typowania podpięte pod Twój Google Sheet.</p><button className="refresh" onClick={loadData}><RefreshCw size={16}/> {loading ? 'Odświeżanie...' : 'Odśwież dane'}</button>{error ? <div className="error-box">{error}</div> : null}<div className="updated">Ostatnia aktualizacja: {data.meta?.updatedAt || '—'}</div></section><section className="stats"><StatCard icon={Trophy} label="Lider" value={leader?.gracz || '—'} sub={`${formatNumber(leader?.punkty)} pkt`}/><StatCard icon={Target} label="Najwyższy trafiony kurs" value={bestHit ? formatNumber(bestHit.kurs) : '—'} sub={bestHit ? `${bestHit.gracz} — ${bestHit.mecz}` : 'Brak'}/><StatCard icon={Flame} label="Najdłuższa seria" value={bestStreak ? `${bestStreak.seria || 0}` : '—'} sub={bestStreak?.gracz || ''}/><StatCard icon={Coins} label="Pula" value={`${formatNumber(pool.pula)} zł`} sub={`${pool.gracze || 0} graczy`}/></section><Tabs tab={tab} setTab={setTab}/>{tab === 'ranking' && <Ranking ranking={ranking}/>} {tab === 'matches' && <Matches matches={data.matches || []}/>} {tab === 'hits' && <SimpleTable title="Najlepsze trafienia" icon={Target} rows={data.hits || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'typ',label:'Typ'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'bonuses' && <SimpleTable title="Side bety" icon={ShieldCheck} rows={data.bonuses || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'zdarzenie',label:'Zdarzenie'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'status',label:'Status'},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'players' && <SimpleTable title="Gracze" icon={Users} rows={data.players || []} columns={[{key:'gracz',label:'Gracz'},{key:'typy',label:'Typy',right:true},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'pool' && <div className="pool-grid"><div className="card"><h2>Pula nagród</h2><p className="big-money">{formatNumber(pool.pula)} zł</p><p>{pool.gracze || 0} graczy × {formatNumber(pool.wpisowe || 100)} zł + {formatNumber(pool.rebuy || 0)} zł re-buyów</p></div><div className="card"><h2>Podział przykładowy</h2>{[['1. miejsce',35],['2. miejsce',15],['3. miejsce',5],['Etapy',30],['Bonusy',15]].map(([name,p])=><div className="split-row" key={name}><span>{name}</span><b>{formatNumber(Number(pool.pula||0)*p/100)} zł</b></div>)}</div></div>} {tab === 'betting' && <BettingTab/>} {tab === "types" && <TypesTab data={data} />}</main>;
