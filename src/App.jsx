@@ -68,6 +68,7 @@ function formatNumber(n) {
 
 function normalizeDashboardData(raw) {
   const hits = raw.najlepszeTrafienia || raw.hits || [];
+  const history = raw.historiaPunktow || raw.historia || [];
 
   const bestHitByPlayer = {};
   hits.forEach((h) => {
@@ -84,6 +85,61 @@ function normalizeDashboardData(raw) {
     }
   });
 
+  const historyByPlayer = {};
+
+  history.forEach((row) => {
+    const gracz = row.Gracz ?? row.gracz ?? '';
+    const matchId = Number(row['Match ID'] ?? row.matchId ?? row.id ?? 0);
+    const punktyMecz = Number(
+      row['Punkty mecz'] ??
+      row['Punkty mecz '] ??
+      row.punktyMecz ??
+      row.punkty ??
+      0
+    );
+
+    if (!gracz) return;
+
+    if (!historyByPlayer[gracz]) {
+      historyByPlayer[gracz] = [];
+    }
+
+    historyByPlayer[gracz].push({
+      matchId,
+      punktyMecz,
+    });
+  });
+
+  function getLastPoints(gracz) {
+    const rows = (historyByPlayer[gracz] || [])
+      .filter((r) => !Number.isNaN(r.matchId))
+      .sort((a, b) => a.matchId - b.matchId);
+
+    if (!rows.length) return 0;
+
+    return rows[rows.length - 1].punktyMecz;
+  }
+
+  function getBestSeries(gracz) {
+    const rows = (historyByPlayer[gracz] || [])
+      .filter((r) => !Number.isNaN(r.matchId))
+      .sort((a, b) => a.matchId - b.matchId);
+
+    let current = 0;
+    let best = 0;
+
+    rows.forEach((r) => {
+      if (Number(r.punktyMecz) > 0) {
+        current += 1;
+        best = Math.max(best, current);
+      } else {
+        current = 0;
+      }
+    });
+
+    return best;
+  }
+
   const ranking = (raw.ranking || [])
     .map((r) => {
       const gracz = r.gracz ?? r.Gracz ?? '';
@@ -99,7 +155,6 @@ function normalizeDashboardData(raw) {
       );
 
       let skutecznoscRaw = r.skutecznosc ?? r['Skuteczność %'] ?? r['Skutecznosc %'] ?? '';
-
       let skutecznosc = Number(skutecznoscRaw);
 
       if (!skutecznosc && typy > 0) {
@@ -128,8 +183,8 @@ function normalizeDashboardData(raw) {
         typy,
         skutecznosc,
         najwyzszy_kurs: najwyzszyKurs,
-        seria: Number(r.seria ?? r.Seria ?? 0),
-        ostatnio: Number(r.ostatnio ?? r.Ostatnio ?? 0),
+        seria: Number(r.seria ?? r.Seria ?? getBestSeries(gracz)),
+        ostatnio: Number(r.ostatnio ?? r.Ostatnio ?? getLastPoints(gracz)),
       };
     })
     .filter((r) => r.gracz);
