@@ -111,14 +111,15 @@ function normalizeDashboardData(raw) {
   });
 
   function getLastPoints(gracz) {
-    const rows = (historyByPlayer[gracz] || [])
-      .filter((r) => !Number.isNaN(r.matchId))
-      .sort((a, b) => a.matchId - b.matchId);
+  const rows = (historyByPlayer[gracz] || [])
+    .filter((r) => !Number.isNaN(r.matchId))
+    .filter((r) => Number(r.punktyMecz) !== 0)
+    .sort((a, b) => a.matchId - b.matchId);
 
-    if (!rows.length) return 0;
+  if (!rows.length) return 0;
 
-    return rows[rows.length - 1].punktyMecz;
-  }
+  return rows[rows.length - 1].punktyMecz;
+}
 
   function getBestSeries(gracz) {
     const rows = (historyByPlayer[gracz] || [])
