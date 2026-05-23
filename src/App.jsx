@@ -190,24 +190,36 @@ function normalizeDashboardData(raw) {
     })
     .filter((r) => r.gracz);
 
-  const sourceMatches = raw.statystykiMeczow || raw.matches || raw.mecze || [];
+  const meczeBase = raw.mecze || [];
+const meczeStats = raw.statystykiMeczow || [];
 
-const matches = sourceMatches
-  .map((m) => ({
-    id: m.id ?? m.ID ?? m['Match ID'] ?? '',
-    mecz: m.mecz ?? m.Mecz ?? '',
-    etap: m.etap ?? m.Etap ?? '',
-    start: m.start ?? m.Start ?? m['Data startu'] ?? '',
-    kurs1: Number(m.kurs1 ?? m['Kurs 1'] ?? 0),
-    kursX: Number(m.kursX ?? m['Kurs X'] ?? 0),
-    kurs2: Number(m.kurs2 ?? m['Kurs 2'] ?? 0),
-    wynik: m.wynik ?? m.Wynik ?? m['Wynik 1/X/2'] ?? '',
-    status: m.status ?? m.Status ?? '',
-    typ1: Number(m.typ1 ?? m['Typy 1'] ?? 0),
-    typx: Number(m.typx ?? m.typX ?? m['Typy X'] ?? 0),
-    typ2: Number(m.typ2 ?? m['Typy 2'] ?? 0),
-    najlepszy: m.najlepszy ?? m['Najlepszy gracz'] ?? '—',
-  }))
+const statsById = {};
+meczeStats.forEach((m) => {
+  const id = String(m['Match ID'] ?? m.ID ?? m.id ?? '').trim();
+  if (id) statsById[id] = m;
+});
+
+const matches = meczeBase
+  .map((m) => {
+    const id = String(m.ID ?? m.id ?? m['Match ID'] ?? '').trim();
+    const stats = statsById[id] || {};
+
+    return {
+      id,
+      mecz: m.Mecz ?? m.mecz ?? stats.Mecz ?? '',
+      etap: m.Etap ?? m.etap ?? stats.Etap ?? '',
+      start: m['Data startu'] ?? m.Start ?? m.start ?? '',
+      kurs1: Number(m['Kurs 1'] ?? m.kurs1 ?? 0),
+      kursX: Number(m['Kurs X'] ?? m.kursX ?? 0),
+      kurs2: Number(m['Kurs 2'] ?? m.kurs2 ?? 0),
+      wynik: m['Wynik 1/X/2'] ?? m.Wynik ?? m.wynik ?? stats.Wynik ?? '',
+      status: m.Status ?? m.status ?? '',
+      typ1: Number(stats['Typy 1'] ?? stats.typ1 ?? 0),
+      typx: Number(stats['Typy X'] ?? stats.typx ?? stats.typX ?? 0),
+      typ2: Number(stats['Typy 2'] ?? stats.typ2 ?? 0),
+      najlepszy: stats['Najlepszy gracz'] ?? stats.najlepszy ?? '—',
+    };
+  })
   .filter((m) => m.id || m.mecz);
 
 return {
