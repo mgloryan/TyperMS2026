@@ -222,10 +222,22 @@ const matches = meczeBase
   })
   .filter((m) => m.id || m.mecz);
 
+  const hitsNormalized = (raw.najlepszeTrafienia || raw.hits || [])
+  .map((h) => ({
+    gracz: h.gracz ?? h.Gracz ?? '',
+    matchId: h.matchId ?? h['Match ID'] ?? '',
+    mecz: h.mecz ?? h.Mecz ?? '',
+    etap: h.etap ?? h.Etap ?? '',
+    typ: h.typ ?? h.Typ ?? '',
+    kurs: Number(h.kurs ?? h.Kurs ?? 0),
+    punkty: Number(h.punkty ?? h.Punkty ?? 0),
+  }))
+  .filter((h) => h.gracz || h.mecz || h.typ);
+
 return {
   ...raw,
   ranking,
-  hits: raw.najlepszeTrafienia || raw.hits || [],
+  hits: hitsNormalized,
   bonuses: raw.zdarzenia || raw.bonuses || [],
   matches,
   players: raw.statystykiGraczy || raw.players || ranking,
