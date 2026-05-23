@@ -98,3 +98,13 @@
     flex-direction: column;
   }
 }
+
+.hidden-types-box {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  font-weight: 800;
+}
