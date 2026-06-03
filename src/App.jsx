@@ -246,11 +246,24 @@ const matches = meczeBase
   }))
   .filter((h) => h.gracz || h.mecz || h.typ);
 
+  const bonusesNormalized = (raw.sideBetyWidoczne || raw.zdarzenia || raw.bonuses || [])
+  .map((b) => ({
+    gracz: b.gracz ?? b.Gracz ?? '',
+    matchId: b.matchId ?? b['Match ID'] ?? '',
+    mecz: b.mecz ?? b.Mecz ?? '',
+    etap: b.etap ?? b.Etap ?? '',
+    zdarzenie: b.zdarzenie ?? b.Zdarzenie ?? '',
+    kurs: toNumber(b.kurs ?? b.Kurs ?? 0),
+    status: b.status ?? b.Status ?? '',
+    punkty: toNumber(b.punkty ?? b.Punkty ?? 0),
+  }))
+  .filter((b) => b.gracz || b.mecz || b.zdarzenie);
+
 return {
   ...raw,
   ranking,
   hits: hitsNormalized,
-  bonuses: raw.zdarzenia || raw.bonuses || [],
+  bonuses: bonusesNormalized,
   matches,
   players: raw.statystykiGraczy || raw.players || ranking,
   prizePool: raw.pula?.[0] || raw.prizePool || MOCK_DATA.prizePool,
