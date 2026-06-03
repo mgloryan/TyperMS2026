@@ -404,17 +404,6 @@ function BettingTab({ darkMode }) {
   );
 }
 
-  if (!APPS_SCRIPT_URL) return <div className="card setup-card"><AlertTriangle/><h2>Wklej link do Apps Script</h2><p>W pliku <b>src/App.jsx</b> ustaw:</p><pre>{`const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TWOJ_ID/exec';`}</pre><p>Potem wrzuć zmianę na GitHub i zrób redeploy w Vercel.</p></div>;
-
- return <div className="player-panel-full">
-    <iframe
-      title="Panel gracza"
-      src={iframeUrl || APPS_SCRIPT_URL}
-      className="player-panel"
-    />
-  </div>;
-}
-
 function TypesTab({ data }) {
   const rows = data?.typyWidoczne || [];
 
