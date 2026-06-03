@@ -364,16 +364,45 @@ function SimpleTable({ title, icon: Icon, columns, rows }) {
   return <div className="card table-card"><div className="card-head"><Icon size={20}/><h2>{title}</h2></div><div className="table-wrap"><table><thead><tr>{columns.map(c => <th key={c.key} className={c.right?'right':''}>{c.label}</th>)}</tr></thead><tbody>{rows.length ? rows.map((row, i) => <tr key={i}>{columns.map(c => <td key={c.key} className={c.right?'right':''}>{c.render ? c.render(row) : row[c.key]}</td>)}</tr>) : <tr><td colSpan={columns.length} className="empty-cell">Brak danych</td></tr>}</tbody></table></div></div>;
 }
 
-function BettingTab() {
+function BettingTab({ darkMode }) {
   const [player, setPlayer] = useState('');
   const [code, setCode] = useState('');
+
   const iframeUrl = useMemo(() => {
     if (!APPS_SCRIPT_URL) return '';
+
     const url = new URL(APPS_SCRIPT_URL);
+
     if (player) url.searchParams.set('gracz', player);
     if (code) url.searchParams.set('kod', code);
+
+    url.searchParams.set('theme', darkMode ? 'dark' : 'light');
+
     return url.toString();
-  }, [player, code]);
+  }, [player, code, darkMode]);
+
+  if (!APPS_SCRIPT_URL) {
+    return (
+      <div className="card setup-card">
+        <AlertTriangle />
+        <h2>Wklej link do Apps Script</h2>
+        <p>W pliku <b>src/App.jsx</b> ustaw:</p>
+        <pre>{`const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TWOJ_ID/exec';`}</pre>
+        <p>Potem wrzuć zmianę na GitHub i zrób redeploy w Vercel.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="player-panel-full">
+      <iframe
+        title="Panel gracza"
+        src={iframeUrl || APPS_SCRIPT_URL}
+        className="player-panel"
+      />
+    </div>
+  );
+}
 
   if (!APPS_SCRIPT_URL) return <div className="card setup-card"><AlertTriangle/><h2>Wklej link do Apps Script</h2><p>W pliku <b>src/App.jsx</b> ustaw:</p><pre>{`const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TWOJ_ID/exec';`}</pre><p>Potem wrzuć zmianę na GitHub i zrób redeploy w Vercel.</p></div>;
 
