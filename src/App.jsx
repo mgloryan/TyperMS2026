@@ -568,7 +568,7 @@ function ChartsTab({ data }) {
   };
 
   const palette = [
-    '#0f172a',
+    '#facc15',
     '#2563eb',
     '#16a34a',
     '#dc2626',
