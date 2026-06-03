@@ -405,26 +405,40 @@ function BettingTab({ darkMode }) {
 }
 
 function TypesTab({ data }) {
-  const rows = data?.typyWidoczne || [];
+  const rows = (data?.typyWidoczne || [])
+    .map((row) => ({
+      matchId: String(row['Match ID'] ?? row.matchId ?? '').trim(),
+      mecz: row.Mecz ?? row.mecz ?? '',
+      etap: row.Etap ?? row.etap ?? '',
+      start: row.Start ?? row.start ?? '',
+      gracz: row.Gracz ?? row.gracz ?? '',
+      typ: row.Typ ?? row.typ ?? 'BRAK',
+      kurs: row.Kurs ?? row.kurs ?? '',
+      wynik: row.Wynik ?? row.wynik ?? '',
+      punkty: Number(row.Punkty ?? row.punkty ?? 0),
+      timestamp: row.Timestamp ?? row.timestamp ?? '',
+    }))
+    .filter((row) => row.matchId && row.gracz);
 
   const grouped = rows.reduce((acc, row) => {
-    const matchId = row["Match ID"];
-    if (!acc[matchId]) {
-      acc[matchId] = {
-        matchId,
-        mecz: row["Mecz"],
-        etap: row["Etap"],
-        start: row["Start"],
-        wynik: row["Wynik"],
-        bets: []
+    if (!acc[row.matchId]) {
+      acc[row.matchId] = {
+        matchId: row.matchId,
+        mecz: row.mecz,
+        etap: row.etap,
+        start: row.start,
+        wynik: row.wynik,
+        bets: [],
       };
     }
 
-    acc[matchId].bets.push(row);
+    acc[row.matchId].bets.push(row);
     return acc;
   }, {});
 
-  const groups = Object.values(grouped);
+  const groups = Object.values(grouped).sort((a, b) => {
+    return Number(a.matchId) - Number(b.matchId);
+  });
 
   if (!groups.length) {
     return (
@@ -449,13 +463,15 @@ function TypesTab({ data }) {
           <div className="card match-types-card" key={group.matchId}>
             <div className="match-types-head">
               <div>
-                <div className="muted">#{group.matchId} · {group.etap}</div>
+                <div className="muted">
+                  #{group.matchId} · {group.etap}
+                </div>
                 <h3>{group.mecz}</h3>
                 <div className="muted">Start: {group.start}</div>
               </div>
 
               <div className="result-pill">
-                Wynik: {group.wynik || "oczekuje"}
+                Wynik: {group.wynik || 'oczekuje'}
               </div>
             </div>
 
@@ -472,14 +488,22 @@ function TypesTab({ data }) {
 
                 <tbody>
                   {group.bets.map((bet, index) => (
-                    <tr key={index}>
-                      <td>{bet["Gracz"]}</td>
+                    <tr key={`${bet.matchId}-${bet.gracz}-${index}`}>
+                      <td>{bet.gracz}</td>
                       <td>
-                        <strong>{bet["Typ"]}</strong>
+                        <strong>{bet.typ}</strong>
                       </td>
-                      <td>{formatNumber(bet["Kurs"])}</td>
-                      <td className={Number(bet["Punkty"]) > 0 ? "positive" : Number(bet["Punkty"]) < 0 ? "negative" : ""}>
-                        {formatNumber(bet["Punkty"])}
+                      <td>{formatNumber(bet.kurs)}</td>
+                      <td
+                        className={
+                          Number(bet.punkty) > 0
+                            ? 'positive'
+                            : Number(bet.punkty) < 0
+                              ? 'negative'
+                              : ''
+                        }
+                      >
+                        {formatNumber(bet.punkty)}
                       </td>
                     </tr>
                   ))}
