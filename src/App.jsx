@@ -831,9 +831,20 @@ setData({ ...MOCK_DATA, ...normalized });
   localStorage.setItem('typer-theme', darkMode ? 'dark' : 'light');
 }, [darkMode]);
 
-  const ranking = useMemo(
-  () => [...(data.ranking || [])].sort((a, b) => Number(b.punkty) - Number(a.punkty)),
-  [data.ranking]
+  const safeData = data || {
+  ranking: [],
+  matches: [],
+  hits: [],
+  bonuses: [],
+  typyWidoczne: [],
+  historiaPunktow: [],
+  prizePool: { pula: 0, gracze: 0, wpisowe: 50 },
+  meta: {}
+};
+
+const ranking = useMemo(
+  () => [...(safeData.ranking || [])].sort((a, b) => Number(b.punkty) - Number(a.punkty)),
+  [safeData.ranking]
 );
 
 const leader = ranking[0];
@@ -855,7 +866,7 @@ const pool = {
   firstPrize,
   secondPrize,
 };
-  const bestHit = [...(data.hits || [])]
+  const bestHit = [...(safeData.hits || [])]
   .map((h) => ({
     gracz: h.gracz ?? h.Gracz ?? '',
     mecz: h.mecz ?? h.Mecz ?? '',
@@ -874,12 +885,12 @@ const pool = {
     {darkMode ? <Sun size={16}/> : <Moon size={16}/>}
     {darkMode ? 'Light mode' : 'Dark mode'}
   </button>
-</div>{error ? <div className="error-box">{error}</div> : null}<div className="updated">Ostatnia aktualizacja: {data.meta?.updatedAt || '—'}</div></section><section className="stats"><StatCard icon={Trophy} label="Lider" value={leader?.gracz || '—'} sub={`${formatNumber(leader?.punkty)} pkt`}/><StatCard icon={Target} label="Najwyższy trafiony kurs" value={bestHit ? formatNumber(bestHit.kurs) : '—'} sub={bestHit ? `${bestHit.gracz} — ${bestHit.mecz}` : 'Brak'}/><StatCard icon={Flame} label="Najdłuższa seria" value={bestStreak ? `${bestStreak.seria || 0}` : '—'} sub={bestStreak?.gracz || ''}/><StatCard
+</div>{error ? <div className="error-box">{error}</div> : null}<div className="updated">Ostatnia aktualizacja: {safeData.meta?.updatedAt || '—'}</div></section><section className="stats"><StatCard icon={Trophy} label="Lider" value={leader?.gracz || '—'} sub={`${formatNumber(leader?.punkty)} pkt`}/><StatCard icon={Target} label="Najwyższy trafiony kurs" value={bestHit ? formatNumber(bestHit.kurs) : '—'} sub={bestHit ? `${bestHit.gracz} — ${bestHit.mecz}` : 'Brak'}/><StatCard icon={Flame} label="Najdłuższa seria" value={bestStreak ? `${bestStreak.seria || 0}` : '—'} sub={bestStreak?.gracz || ''}/><StatCard
   icon={Coins}
   label="Pula"
   value={`${formatNumber(pool.pula)} $`}
   sub={`${pool.gracze || 0} graczy × ${formatNumber(pool.wpisowe)} $`}
-/></section><Tabs tab={tab} setTab={setTab}/>{tab === 'ranking' && <Ranking ranking={ranking}/>} {tab === 'matches' && <Matches matches={data.matches || []}/>} {tab === 'hits' && <SimpleTable title="Najlepsze trafienia" icon={Target} rows={data.hits || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'typ',label:'Typ'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'bonuses' && <SimpleTable title="Side bety" icon={ShieldCheck} rows={data.bonuses || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'zdarzenie',label:'Zdarzenie'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'status',label:'Status'},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'charts' && <ChartsTab data={data} />} {tab === 'pool' && (
+/></section><Tabs tab={tab} setTab={setTab}/>{tab === 'ranking' && <Ranking ranking={ranking}/>} {tab === 'matches' && <Matches matches={safeData.matches || []}/>} {tab === 'hits' && <SimpleTable title="Najlepsze trafienia" icon={Target} rows={safeData.hits || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'typ',label:'Typ'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'bonuses' && <SimpleTable title="Side bety" icon={ShieldCheck} rows={safeData.bonuses || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'zdarzenie',label:'Zdarzenie'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'status',label:'Status'},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'charts' && <ChartsTab data={safeData} />} {tab === 'pool' && (
   <div className="pool-grid">
     <div className="card">
       <h2>Pula nagród</h2>
@@ -909,5 +920,5 @@ const pool = {
       </div>
     </div>
   </div>
-)} {tab === 'betting' && <BettingTab darkMode={darkMode} />} {tab === "types" && <TypesTab data={data} />}</main>;
+)} {tab === 'betting' && <BettingTab darkMode={darkMode} />} {tab === "types" && <TypesTab data={safeData} />}</main>;
 }
