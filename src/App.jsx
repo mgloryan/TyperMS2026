@@ -246,12 +246,13 @@ const matches = meczeBase
   }))
   .filter((h) => h.gracz || h.mecz || h.typ);
 
-  const bonusesNormalized = (raw.sideBetyWidoczne || raw.zdarzenia || raw.bonuses || [])
+const bonusesNormalized = (raw.sideBetyWidoczne || raw.zdarzenia || raw.bonuses || [])
   .map((b) => ({
     gracz: b.gracz ?? b.Gracz ?? '',
     matchId: b.matchId ?? b['Match ID'] ?? '',
     mecz: b.mecz ?? b.Mecz ?? '',
     etap: b.etap ?? b.Etap ?? '',
+    start: b.start ?? b.Start ?? '',
     zdarzenie: b.zdarzenie ?? b.Zdarzenie ?? '',
     kurs: toNumber(b.kurs ?? b.Kurs ?? 0),
     status: b.status ?? b.Status ?? '',
