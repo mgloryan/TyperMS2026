@@ -661,7 +661,7 @@ function ChartsTab({ data }) {
     '#facc15',
     '#2563eb',
     '#16a34a',
-    '#dc2626',
+    '#a78bfa',
     '#9333ea',
     '#ea580c',
     '#0891b2',
