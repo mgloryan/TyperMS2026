@@ -879,5 +879,35 @@ const pool = {
   label="Pula"
   value={`${formatNumber(pool.pula)} $`}
   sub={`${pool.gracze || 0} graczy × ${formatNumber(pool.wpisowe)} $`}
-/></section><Tabs tab={tab} setTab={setTab}/>{tab === 'ranking' && <Ranking ranking={ranking}/>} {tab === 'matches' && <Matches matches={data.matches || []}/>} {tab === 'hits' && <SimpleTable title="Najlepsze trafienia" icon={Target} rows={data.hits || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'typ',label:'Typ'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'bonuses' && <SimpleTable title="Side bety" icon={ShieldCheck} rows={data.bonuses || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'zdarzenie',label:'Zdarzenie'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'status',label:'Status'},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'charts' && <ChartsTab data={data} />} {tab === 'pool' && <div className="pool-grid"><div className="card"><h2>Pula nagród</h2><p className="big-money">{formatNumber(pool.pula)} zł</p><p>{pool.gracze || 0} graczy × {formatNumber(pool.wpisowe || 100)} zł + {formatNumber(pool.rebuy || 0)} zł re-buyów</p></div><div className="card"><h2>Podział przykładowy</h2>{[['1. miejsce',35],['2. miejsce',15],['3. miejsce',5],['Etapy',30],['Bonusy',15]].map(([name,p])=><div className="split-row" key={name}><span>{name}</span><b>{formatNumber(Number(pool.pula||0)*p/100)} zł</b></div>)}</div></div>} {tab === 'betting' && <BettingTab darkMode={darkMode} />} {tab === "types" && <TypesTab data={data} />}</main>;
+/></section><Tabs tab={tab} setTab={setTab}/>{tab === 'ranking' && <Ranking ranking={ranking}/>} {tab === 'matches' && <Matches matches={data.matches || []}/>} {tab === 'hits' && <SimpleTable title="Najlepsze trafienia" icon={Target} rows={data.hits || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'typ',label:'Typ'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'bonuses' && <SimpleTable title="Side bety" icon={ShieldCheck} rows={data.bonuses || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'zdarzenie',label:'Zdarzenie'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'status',label:'Status'},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'charts' && <ChartsTab data={data} />} {tab === 'pool' && (
+  <div className="pool-grid">
+    <div className="card">
+      <h2>Pula nagród</h2>
+
+      <p className="big-money">{formatNumber(pool.pula)} $</p>
+
+      <p>
+        {pool.gracze} graczy aktywnych × {formatNumber(pool.wpisowe)} $
+      </p>
+    </div>
+
+    <div className="card">
+      <h2>Podział nagród</h2>
+
+      <div className="split-row">
+        <span>
+          1. miejsce — {leader?.gracz || '—'}
+        </span>
+        <b>{formatNumber(pool.firstPrize)} $</b>
+      </div>
+
+      <div className="split-row">
+        <span>
+          2. miejsce — {secondPlace?.gracz || '—'}
+        </span>
+        <b>{formatNumber(pool.secondPrize)} $</b>
+      </div>
+    </div>
+  </div>
+)} {tab === 'betting' && <BettingTab darkMode={darkMode} />} {tab === "types" && <TypesTab data={data} />}</main>;
 }
