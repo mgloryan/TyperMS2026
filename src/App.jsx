@@ -806,7 +806,7 @@ export default function App() {
   const [darkMode, setDarkMode] = useState(() => {
   return localStorage.getItem('typer-theme') === 'dark';
 });
-  const [data, setData] = useState(MOCK_DATA);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
