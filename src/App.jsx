@@ -284,78 +284,116 @@ function Ranking({ ranking }) {
 }
 
 function Matches({ matches }) {
+  const [filter, setFilter] = useState('all');
+
+  const filteredMatches = (matches || []).filter((m) => {
+    const isFinished =
+      String(m.status || '').toUpperCase().includes('ZAKO') ||
+      String(m.wynik || '').trim() !== '';
+
+    if (filter === 'open') return !isFinished;
+    if (filter === 'closed') return isFinished;
+
+    return true;
+  });
+
   return (
-    <div className="match-grid">
-      {matches.map((m) => {
-        const total = Number(m.typ1) + Number(m.typx) + Number(m.typ2) || 1;
+    <div>
+      <div className="panel-filters">
+        <button
+          className={filter === 'all' ? 'active' : ''}
+          onClick={() => setFilter('all')}
+        >
+          Wszystkie
+        </button>
 
-        const isFinished =
-          String(m.status || '').toUpperCase().includes('ZAKO') ||
-          String(m.wynik || '').trim() !== '';
+        <button
+          className={filter === 'open' ? 'active' : ''}
+          onClick={() => setFilter('open')}
+        >
+          Otwarte
+        </button>
 
-        return (
-          <div className="card match-card" key={m.id}>
-            <div className="match-top">
-              <div>
-                <span className="muted">{m.etap} · #{m.id}</span>
-                <h3>{m.mecz}</h3>
-                <p>{m.start}</p>
-              </div>
+        <button
+          className={filter === 'closed' ? 'active' : ''}
+          onClick={() => setFilter('closed')}
+        >
+          Zamknięte
+        </button>
+      </div>
 
-              <Badge
-                type={
-                  String(m.status).includes('ZAKO')
-                    ? 'good'
-                    : String(m.status).includes('OTWAR')
+      <div className="match-grid">
+        {filteredMatches.map((m) => {
+          const total = Number(m.typ1) + Number(m.typx) + Number(m.typ2) || 1;
+
+          const isFinished =
+            String(m.status || '').toUpperCase().includes('ZAKO') ||
+            String(m.wynik || '').trim() !== '';
+
+          return (
+            <div className="card match-card" key={m.id}>
+              <div className="match-top">
+                <div>
+                  <span className="muted">{m.etap} · #{m.id}</span>
+                  <h3>{m.mecz}</h3>
+                  <p>{m.start}</p>
+                </div>
+
+                <Badge
+                  type={
+                    String(m.status).includes('ZAKO')
                       ? 'good'
-                      : 'wait'
-                }
-              >
-                {m.status || '—'}
-              </Badge>
-            </div>
-
-            <div className="odds-line">
-              <span>1: {formatNumber(m.kurs1)}</span>
-              <span>X: {formatNumber(m.kursX)}</span>
-              <span>2: {formatNumber(m.kurs2)}</span>
-            </div>
-
-            {isFinished ? (
-              <>
-                {[
-                  ['1', m.typ1],
-                  ['X', m.typx],
-                  ['2', m.typ2],
-                ].map(([label, val]) => (
-                  <div className="bar-row" key={label}>
-                    <div>
-                      <span>Typ {label}</span>
-                      <b>{val || 0}</b>
-                    </div>
-
-                    <div className="bar">
-                      <i style={{ width: `${(Number(val || 0) / total) * 100}%` }} />
-                    </div>
-                  </div>
-                ))}
-
-                <p>
-                  <span className="muted">Wynik:</span> <b>{m.wynik || '—'}</b>
-                </p>
-
-                <p>
-                  <span className="muted">Najlepiej:</span> <b>{m.najlepszy || '—'}</b>
-                </p>
-              </>
-            ) : (
-              <div className="hidden-types-box">
-                Typy graczy będą widoczne po zakończeniu meczu.
+                      : String(m.status).includes('OTWAR')
+                        ? 'good'
+                        : 'wait'
+                  }
+                >
+                  {m.status || '—'}
+                </Badge>
               </div>
-            )}
-          </div>
-        );
-      })}
+
+              <div className="odds-line">
+                <span>1: {formatNumber(m.kurs1)}</span>
+                <span>X: {formatNumber(m.kursX)}</span>
+                <span>2: {formatNumber(m.kurs2)}</span>
+              </div>
+
+              {isFinished ? (
+                <>
+                  {[
+                    ['1', m.typ1],
+                    ['X', m.typx],
+                    ['2', m.typ2],
+                  ].map(([label, val]) => (
+                    <div className="bar-row" key={label}>
+                      <div>
+                        <span>Typ {label}</span>
+                        <b>{val || 0}</b>
+                      </div>
+
+                      <div className="bar">
+                        <i style={{ width: `${(Number(val || 0) / total) * 100}%` }} />
+                      </div>
+                    </div>
+                  ))}
+
+                  <p>
+                    <span className="muted">Wynik:</span> <b>{m.wynik || '—'}</b>
+                  </p>
+
+                  <p>
+                    <span className="muted">Najlepiej:</span> <b>{m.najlepszy || '—'}</b>
+                  </p>
+                </>
+              ) : (
+                <div className="hidden-types-box">
+                  Typy graczy będą widoczne po zakończeniu meczu.
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -405,6 +443,8 @@ function BettingTab({ darkMode }) {
 }
 
 function TypesTab({ data }) {
+  const [filter, setFilter] = useState('all');
+
   const rows = (data?.typyWidoczne || [])
     .map((row) => ({
       matchId: String(row['Match ID'] ?? row.matchId ?? '').trim(),
@@ -436,11 +476,18 @@ function TypesTab({ data }) {
     return acc;
   }, {});
 
-  const groups = Object.values(grouped).sort((a, b) => {
-    return Number(a.matchId) - Number(b.matchId);
-  });
+  const groups = Object.values(grouped)
+    .filter((group) => {
+      const isFinished = String(group.wynik || '').trim() !== '';
 
-  if (!groups.length) {
+      if (filter === 'open') return !isFinished;
+      if (filter === 'closed') return isFinished;
+
+      return true;
+    })
+    .sort((a, b) => Number(a.matchId) - Number(b.matchId));
+
+  if (!rows.length) {
     return (
       <div className="card">
         <h2>Typy graczy</h2>
@@ -456,7 +503,29 @@ function TypesTab({ data }) {
       <div className="section-head">
         <h2>Typy graczy</h2>
         <p>Widoczne tylko dla meczów, które już się rozpoczęły.</p>
-        <p className="muted">Widoczne mecze: {groups.length}</p>
+      </div>
+
+      <div className="panel-filters">
+        <button
+          className={filter === 'all' ? 'active' : ''}
+          onClick={() => setFilter('all')}
+        >
+          Wszystkie
+        </button>
+
+        <button
+          className={filter === 'open' ? 'active' : ''}
+          onClick={() => setFilter('open')}
+        >
+          Otwarte
+        </button>
+
+        <button
+          className={filter === 'closed' ? 'active' : ''}
+          onClick={() => setFilter('closed')}
+        >
+          Zamknięte
+        </button>
       </div>
 
       <div className="types-grid">
@@ -513,6 +582,13 @@ function TypesTab({ data }) {
             </div>
           </div>
         ))}
+
+        {!groups.length && (
+          <div className="card">
+            <h3>Brak meczów dla tego filtra</h3>
+            <p className="muted">Zmień filtr na inny.</p>
+          </div>
+        )}
       </div>
     </div>
   );
