@@ -866,8 +866,12 @@ const ranking = useMemo(
 const leader = ranking[0];
 const secondPlace = ranking[1];
 
-const activePlayers = ranking.filter((player) => player.gracz);
-const activePlayersCount = activePlayers.length;
+const realPlayers = ranking.filter((player) => {
+  const name = String(player.gracz || '').trim().toUpperCase();
+  return name && !name.startsWith('BOT');
+});
+
+const activePlayersCount = realPlayers.length;
 
 const entryFee = 50;
 const calculatedPool = activePlayersCount * entryFee;
