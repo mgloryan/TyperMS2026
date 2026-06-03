@@ -801,6 +801,22 @@ function ChartsTab({ data }) {
   );
 }
 
+function LoadingOverlay({ show }) {
+  if (!show) return null;
+
+  return (
+    <div className="loading-overlay">
+      <div className="loader-card">
+        <div className="loader-ball">⚽</div>
+        <div>
+          <strong>Odświeżam dane...</strong>
+          <p>Pobieram aktualny ranking, typy i statystyki.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [tab, setTab] = useState('ranking');
   const [darkMode, setDarkMode] = useState(() => {
@@ -876,7 +892,7 @@ const pool = {
   .sort((a, b) => b.kurs - a.kurs)[0];
   const bestStreak = [...ranking].sort((a,b)=>Number(b.seria)-Number(a.seria))[0];
 
-  return <main className="page"><section className="hero"><div className="pill-main">🏆 TYPER MŚ 2026</div><h1>Panel turnieju</h1><div className="hero-actions">
+  return <main className="page"><LoadingOverlay show={loading} /><section className="hero"><div className="pill-main">🏆 TYPER MŚ 2026</div><h1>Panel turnieju</h1><div className="hero-actions">
   <button className="refresh" onClick={loadData}>
     <RefreshCw size={16}/> {loading ? 'Odświeżanie...' : 'Odśwież dane'}
   </button>
