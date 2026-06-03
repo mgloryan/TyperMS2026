@@ -831,9 +831,30 @@ setData({ ...MOCK_DATA, ...normalized });
   localStorage.setItem('typer-theme', darkMode ? 'dark' : 'light');
 }, [darkMode]);
 
-  const ranking = useMemo(() => [...(data.ranking || [])].sort((a,b)=>Number(b.punkty)-Number(a.punkty)), [data.ranking]);
-  const leader = ranking[0];
-  const pool = data.prizePool || { pula: 0, rebuy: 0, gracze: 0, wpisowe: 100 };
+  const ranking = useMemo(
+  () => [...(data.ranking || [])].sort((a, b) => Number(b.punkty) - Number(a.punkty)),
+  [data.ranking]
+);
+
+const leader = ranking[0];
+const secondPlace = ranking[1];
+
+const activePlayers = ranking.filter((player) => player.gracz);
+const activePlayersCount = activePlayers.length;
+
+const entryFee = 50;
+const calculatedPool = activePlayersCount * entryFee;
+
+const firstPrize = calculatedPool * 0.7;
+const secondPrize = calculatedPool * 0.3;
+
+const pool = {
+  wpisowe: entryFee,
+  gracze: activePlayersCount,
+  pula: calculatedPool,
+  firstPrize,
+  secondPrize,
+};
   const bestHit = [...(data.hits || [])]
   .map((h) => ({
     gracz: h.gracz ?? h.Gracz ?? '',
