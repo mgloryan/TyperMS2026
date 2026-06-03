@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Trophy, Target, Flame, Coins, CalendarDays, ShieldCheck, LogIn, Medal, RefreshCw, Users, AlertTriangle, Eye, LineChart } from 'lucide-react';
+import { Trophy, Target, Flame, Coins, CalendarDays, ShieldCheck, LogIn, Medal, RefreshCw, Users, AlertTriangle, Eye, LineChart, Moon, Sun } from 'lucide-react';
 
 // =====================================================
 // TEPER MŚ 2026 — DASHBOARD LIVE + TYPOWANIE
@@ -670,6 +670,9 @@ function ChartsTab({ data }) {
 
 export default function App() {
   const [tab, setTab] = useState('ranking');
+  const [darkMode, setDarkMode] = useState(() => {
+  return localStorage.getItem('typer-theme') === 'dark';
+});
   const [data, setData] = useState(MOCK_DATA);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -689,6 +692,11 @@ setData({ ...MOCK_DATA, ...normalized });
   }
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+  document.documentElement.classList.toggle('dark', darkMode);
+  localStorage.setItem('typer-theme', darkMode ? 'dark' : 'light');
+}, [darkMode]);
 
   const ranking = useMemo(() => [...(data.ranking || [])].sort((a,b)=>Number(b.punkty)-Number(a.punkty)), [data.ranking]);
   const leader = ranking[0];
