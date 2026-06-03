@@ -456,6 +456,7 @@ function TypesTab({ data }) {
       <div className="section-head">
         <h2>Typy graczy</h2>
         <p>Widoczne tylko dla meczów, które już się rozpoczęły.</p>
+        <p className="muted">Widoczne mecze: {groups.length}</p>
       </div>
 
       <div className="types-grid">
