@@ -865,7 +865,7 @@ const pool = {
   .sort((a, b) => b.kurs - a.kurs)[0];
   const bestStreak = [...ranking].sort((a,b)=>Number(b.seria)-Number(a.seria))[0];
 
-  return <main className="page"><section className="hero"><div className="pill-main">🏆 TYPER MŚ 2026</div><h1>Panel turnieju</h1><p>Statystyki, ranking, mecze, side bety i zakładka typowania podpięte pod Twój Google Sheet.</p><div className="hero-actions">
+  return <main className="page"><section className="hero"><div className="pill-main">🏆 TYPER MŚ 2026</div><h1>Panel turnieju</h1><div className="hero-actions">
   <button className="refresh" onClick={loadData}>
     <RefreshCw size={16}/> {loading ? 'Odświeżanie...' : 'Odśwież dane'}
   </button>
