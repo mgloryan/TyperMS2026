@@ -294,7 +294,116 @@ function Tabs({ tab, setTab }) {
 }
 
 function Ranking({ ranking }) {
-  return <div className="card table-card"><div className="card-head"><Medal size={20}/><h2>Ranking główny</h2></div><div className="table-wrap"><table><thead><tr><th>#</th><th>Gracz</th><th>Punkty</th><th>Trafione</th><th>Skuteczność</th><th>Najwyższy kurs</th><th>Seria</th><th>Ostatnio</th></tr></thead><tbody>{ranking.map((r, i) => <tr key={r.gracz}><td><b>{i+1}</b></td><td><b>{i===0?'🏆 ':''}{r.gracz}</b></td><td className="right"><b>{formatNumber(r.punkty)}</b></td><td className="right">{r.trafione}/{r.typy}</td><td className="right">{Math.round(Number(r.skutecznosc || 0))}%</td><td className="right">{formatNumber(r.najwyzszy_kurs)}</td><td className="right">🔥 {r.seria || 0}</td><td className="right">{formatNumber(r.ostatnio)}</td></tr>)}</tbody></table></div></div>;
+  const [showMatchPoints, setShowMatchPoints] = useState(true);
+  const [showSideBets, setShowSideBets] = useState(true);
+  const [showTournamentPicks, setShowTournamentPicks] = useState(true);
+
+  const calculatedRanking = [...(ranking || [])]
+    .map((r) => {
+      const matchPoints = Number(r.punkty_typy ?? r['Punkty typy'] ?? 0);
+      const sideBetPoints = Number(r.punkty_zdarzenia ?? r['Punkty zdarzenia'] ?? 0);
+      const tournamentPoints = Number(r.punkty_turniejowe ?? r['Punkty turniejowe'] ?? 0);
+
+      const calculatedPoints =
+        (showMatchPoints ? matchPoints : 0) +
+        (showSideBets ? sideBetPoints : 0) +
+        (showTournamentPicks ? tournamentPoints : 0);
+
+      return {
+        ...r,
+        calculatedPoints,
+        matchPoints,
+        sideBetPoints,
+        tournamentPoints,
+      };
+    })
+    .sort((a, b) => Number(b.calculatedPoints) - Number(a.calculatedPoints));
+
+  return (
+    <div className="card table-card">
+      <div className="card-head ranking-head">
+        <div>
+          <Medal size={20} />
+          <h2>Ranking główny</h2>
+        </div>
+
+        <div className="ranking-toggles">
+          <label>
+            <input
+              type="checkbox"
+              checked={showMatchPoints}
+              onChange={(e) => setShowMatchPoints(e.target.checked)}
+            />
+            Pkt za mecz
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              checked={showSideBets}
+              onChange={(e) => setShowSideBets(e.target.checked)}
+            />
+            Side bety
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              checked={showTournamentPicks}
+              onChange={(e) => setShowTournamentPicks(e.target.checked)}
+            />
+            Typy turniejowe
+          </label>
+        </div>
+      </div>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Gracz</th>
+              <th>Punkty</th>
+              <th>Pkt mecz</th>
+              <th>Side bety</th>
+              <th>Turniejowe</th>
+              <th>Trafione</th>
+              <th>Skuteczność</th>
+              <th>Najwyższy kurs</th>
+              <th>Seria</th>
+              <th>Ostatnio</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {calculatedRanking.map((r, i) => (
+              <tr key={r.gracz}>
+                <td><b>{i + 1}</b></td>
+
+                <td>
+                  <b>{i === 0 ? '🏆 ' : ''}{r.gracz}</b>
+                </td>
+
+                <td className="right">
+                  <b>{formatNumber(r.calculatedPoints)}</b>
+                </td>
+
+                <td className="right">{formatNumber(r.matchPoints)}</td>
+                <td className="right">{formatNumber(r.sideBetPoints)}</td>
+                <td className="right">{formatNumber(r.tournamentPoints)}</td>
+
+                <td className="right">{r.trafione}/{r.typy}</td>
+                <td className="right">{Math.round(Number(r.skutecznosc || 0))}%</td>
+                <td className="right">{formatNumber(r.najwyzszy_kurs)}</td>
+                <td className="right">🔥 {r.seria || 0}</td>
+                <td className="right">{formatNumber(r.ostatnio)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 function Matches({ matches }) {
