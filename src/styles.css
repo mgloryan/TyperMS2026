@@ -419,3 +419,53 @@
 :root.dark .loader-ball {
   background: #1e293b;
 }
+
+.ranking-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.ranking-head > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ranking-toggles {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ranking-toggles label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 9px 13px;
+  border-radius: 999px;
+  font-weight: 900;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ranking-toggles input {
+  accent-color: #22c55e;
+}
+
+:root.dark .ranking-toggles label {
+  background: #1e293b;
+  color: #e5e7eb;
+  border-color: #334155;
+}
+
+:root.dark .ranking-toggles label:has(input:checked) {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.55);
+  color: #bbf7d0;
+}
