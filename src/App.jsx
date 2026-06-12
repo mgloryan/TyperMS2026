@@ -267,12 +267,33 @@ const bonusesNormalized = (raw.sideBetyWidoczne || raw.zdarzenia || raw.bonuses 
     sf2: p.SF2 ?? p.sf2 ?? '',
     sf3: p.SF3 ?? p.sf3 ?? '',
     sf4: p.SF4 ?? p.sf4 ?? '',
-    mistrz: p.Mistrz ?? p.mistrz ?? p.champion ?? '',
-    status: p.Status ?? p.status ?? '',
-    punktyPolfinalisci: toNumber(p['Punkty półfinaliści'] ?? p.punktyPolfinalisci ?? 0),
-    punktyMistrz: toNumber(p['Punkty mistrz'] ?? p.punktyMistrz ?? 0),
-    razem: toNumber(p.Razem ?? p.razem ?? 0),
-    ostatniaZmiana: p['Ostatnia zmiana'] ?? p.ostatniaZmiana ?? '',
+
+    mistrz:
+      p.Mistrz ??
+      p.mistrz ??
+      p.Champion ??
+      p.champion ??
+      p['Mistrz świata'] ??
+      p['Mistrz Świata'] ??
+      '',
+
+    punktyPolfinalisci: toNumber(
+      p['Punkty półfinaliści'] ??
+      p.punktyPolfinalisci ??
+      0
+    ),
+
+    punktyMistrz: toNumber(
+      p['Punkty mistrz'] ??
+      p.punktyMistrz ??
+      0
+    ),
+
+    razem: toNumber(
+      p.Razem ??
+      p.razem ??
+      0
+    ),
   }))
   .filter((p) => p.gracz);
 
