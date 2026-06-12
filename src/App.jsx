@@ -793,7 +793,7 @@ function TournamentPicksTab({ rows }) {
               <th>Półfinalista 3</th>
               <th>Półfinalista 4</th>
               <th>Mistrz</th>
-              <th>Status</th>
+             
               <th>Pkt półfinał</th>
               <th>Pkt mistrz</th>
               <th>Razem</th>
@@ -809,7 +809,6 @@ function TournamentPicksTab({ rows }) {
                 <td>{p.sf3 || '—'}</td>
                 <td>{p.sf4 || '—'}</td>
                 <td><b>{p.mistrz || '—'}</b></td>
-                <td>{p.status || '—'}</td>
                 <td className="right">{formatNumber(p.punktyPolfinalisci)}</td>
                 <td className="right">{formatNumber(p.punktyMistrz)}</td>
                 <td className="right"><b>{formatNumber(p.razem)}</b></td>
