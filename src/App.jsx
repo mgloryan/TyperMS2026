@@ -78,6 +78,45 @@ function toNumber(value) {
   return Number.isNaN(number) ? 0 : number;
 }
 
+function getField(obj, possibleNames) {
+  if (!obj) return '';
+
+  for (const name of possibleNames) {
+    if (obj[name] !== undefined && obj[name] !== null && obj[name] !== '') {
+      return obj[name];
+    }
+  }
+
+  const normalizedKeys = Object.keys(obj).reduce((acc, key) => {
+    const normalizedKey = String(key)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/\u00a0/g, ' ');
+
+    acc[normalizedKey] = obj[key];
+    return acc;
+  }, {});
+
+  for (const name of possibleNames) {
+    const normalizedName = String(name)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/\u00a0/g, ' ');
+
+    if (
+      normalizedKeys[normalizedName] !== undefined &&
+      normalizedKeys[normalizedName] !== null &&
+      normalizedKeys[normalizedName] !== ''
+    ) {
+      return normalizedKeys[normalizedName];
+    }
+  }
+
+  return '';
+}
+
 function normalizeDashboardData(raw) {
   const hits = raw.najlepszeTrafienia || raw.hits || [];
   const history = raw.historiaPunktow || raw.historia || [];
@@ -260,12 +299,44 @@ const bonusesNormalized = (raw.sideBetyWidoczne || raw.zdarzenia || raw.bonuses 
   }))
   .filter((b) => b.gracz || b.mecz || b.zdarzenie);
 
+ const tournamentPicksNormalized = (raw.typyTurniejowe || [])
+  .map((p) => ({
+    gracz: getField(p, ['Gracz', 'gracz']),
+    sf1: getField(p, ['SF1', 'sf1']),
+    sf2: getField(p, ['SF2', 'sf2']),
+    sf3: getField(p, ['SF3', 'sf3']),
+    sf4: getField(p, ['SF4', 'sf4']),
+
+    mistrz: getField(p, [
+      'Mistrz',
+      'mistrz',
+      'Mistrz świata',
+      'Mistrz Świata',
+      'Champion',
+      'champion'
+    ]),
+
+    punktyPolfinalisci: toNumber(
+      getField(p, ['Punkty półfinaliści', 'Punkty polfinalisci', 'punktyPolfinalisci'])
+    ),
+
+    punktyMistrz: toNumber(
+      getField(p, ['Punkty mistrz', 'punktyMistrz'])
+    ),
+
+    razem: toNumber(
+      getField(p, ['Razem', 'razem'])
+    ),
+  }))
+  .filter((p) => p.gracz);
+
 return {
   ...raw,
   ranking,
   hits: hitsNormalized,
   bonuses: bonusesNormalized,
   matches,
+  tournamentPicks: tournamentPicksNormalized,
   players: raw.statystykiGraczy || raw.players || ranking,
   prizePool: raw.pula?.[0] || raw.prizePool || MOCK_DATA.prizePool,
 };
@@ -284,6 +355,7 @@ function Tabs({ tab, setTab }) {
     ['ranking', 'Ranking', Trophy],
     ['matches', 'Mecze', CalendarDays],
     ["types", "Typy", Eye],
+    ['tournamentPicks', 'Typy turniejowe', Trophy],
     ['hits', 'Trafienia', Target],
     ['bonuses', 'Side bety', ShieldCheck],
     ['charts', 'Wykresy', LineChart],
@@ -717,6 +789,71 @@ function TypesTab({ data }) {
   );
 }
 
+function TournamentPicksTab({ rows }) {
+  const sortedRows = [...(rows || [])].sort((a, b) => {
+    return String(a.gracz).localeCompare(String(b.gracz), 'pl');
+  });
+
+  if (!sortedRows.length) {
+    return (
+      <div className="card table-card">
+        <div className="card-head">
+          <Trophy size={20} />
+          <h2>Typy turniejowe</h2>
+        </div>
+
+        <div className="empty-table">
+          Brak zapisanych typów turniejowych.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card table-card">
+      <div className="card-head">
+        <Trophy size={20} />
+        <h2>Typy turniejowe</h2>
+      </div>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Gracz</th>
+              <th>Półfinalista 1</th>
+              <th>Półfinalista 2</th>
+              <th>Półfinalista 3</th>
+              <th>Półfinalista 4</th>
+              <th>Mistrz</th>
+             
+              <th>Pkt półfinał</th>
+              <th>Pkt mistrz</th>
+              <th>Razem</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {sortedRows.map((p) => (
+              <tr key={p.gracz}>
+                <td><b>{p.gracz}</b></td>
+                <td>{p.sf1 || '—'}</td>
+                <td>{p.sf2 || '—'}</td>
+                <td>{p.sf3 || '—'}</td>
+                <td>{p.sf4 || '—'}</td>
+                <td><b>{p.mistrz || '—'}</b></td>
+                <td className="right">{formatNumber(p.punktyPolfinalisci)}</td>
+                <td className="right">{formatNumber(p.punktyMistrz)}</td>
+                <td className="right"><b>{formatNumber(p.razem)}</b></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function ChartsTab({ data }) {
   const rows = data?.historiaPunktow || [];
 
@@ -1019,7 +1156,11 @@ const pool = {
   label="Pula"
   value={`${formatNumber(pool.pula)} $`}
   sub={`${pool.gracze || 0} graczy × ${formatNumber(pool.wpisowe)} $`}
-/></section><Tabs tab={tab} setTab={setTab}/>{tab === 'ranking' && <Ranking ranking={ranking}/>} {tab === 'matches' && <Matches matches={safeData.matches || []}/>} {tab === 'hits' && <SimpleTable title="Najlepsze trafienia" icon={Target} rows={safeData.hits || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'typ',label:'Typ'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'bonuses' && <SimpleTable title="Side bety" icon={ShieldCheck} rows={safeData.bonuses || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'zdarzenie',label:'Zdarzenie'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'status',label:'Status'},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'charts' && <ChartsTab data={safeData} />} {tab === 'pool' && (
+/></section><Tabs tab={tab} setTab={setTab}/>{tab === 'ranking' && <Ranking ranking={ranking}/>} {tab === 'matches' && <Matches matches={safeData.matches || []}/>} 
+    {tab === 'tournamentPicks' && (
+  <TournamentPicksTab rows={safeData.tournamentPicks || []} />
+)}
+    {tab === 'hits' && <SimpleTable title="Najlepsze trafienia" icon={Target} rows={safeData.hits || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'typ',label:'Typ'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'bonuses' && <SimpleTable title="Side bety" icon={ShieldCheck} rows={safeData.bonuses || []} columns={[{key:'gracz',label:'Gracz'},{key:'mecz',label:'Mecz'},{key:'zdarzenie',label:'Zdarzenie'},{key:'kurs',label:'Kurs',right:true,render:r=>formatNumber(r.kurs)},{key:'status',label:'Status'},{key:'punkty',label:'Punkty',right:true,render:r=>formatNumber(r.punkty)}]}/>} {tab === 'charts' && <ChartsTab data={safeData} />} {tab === 'pool' && (
   <div className="pool-grid">
     <div className="card">
       <h2>Pula nagród</h2>
