@@ -78,6 +78,45 @@ function toNumber(value) {
   return Number.isNaN(number) ? 0 : number;
 }
 
+function getField(obj, possibleNames) {
+  if (!obj) return '';
+
+  for (const name of possibleNames) {
+    if (obj[name] !== undefined && obj[name] !== null && obj[name] !== '') {
+      return obj[name];
+    }
+  }
+
+  const normalizedKeys = Object.keys(obj).reduce((acc, key) => {
+    const normalizedKey = String(key)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/\u00a0/g, ' ');
+
+    acc[normalizedKey] = obj[key];
+    return acc;
+  }, {});
+
+  for (const name of possibleNames) {
+    const normalizedName = String(name)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/\u00a0/g, ' ');
+
+    if (
+      normalizedKeys[normalizedName] !== undefined &&
+      normalizedKeys[normalizedName] !== null &&
+      normalizedKeys[normalizedName] !== ''
+    ) {
+      return normalizedKeys[normalizedName];
+    }
+  }
+
+  return '';
+}
+
 function normalizeDashboardData(raw) {
   const hits = raw.najlepszeTrafienia || raw.hits || [];
   const history = raw.historiaPunktow || raw.historia || [];
@@ -260,39 +299,33 @@ const bonusesNormalized = (raw.sideBetyWidoczne || raw.zdarzenia || raw.bonuses 
   }))
   .filter((b) => b.gracz || b.mecz || b.zdarzenie);
 
-  const tournamentPicksNormalized = (raw.typyTurniejowe || [])
+ const tournamentPicksNormalized = (raw.typyTurniejowe || [])
   .map((p) => ({
-    gracz: p.Gracz ?? p.gracz ?? '',
-    sf1: p.SF1 ?? p.sf1 ?? '',
-    sf2: p.SF2 ?? p.sf2 ?? '',
-    sf3: p.SF3 ?? p.sf3 ?? '',
-    sf4: p.SF4 ?? p.sf4 ?? '',
+    gracz: getField(p, ['Gracz', 'gracz']),
+    sf1: getField(p, ['SF1', 'sf1']),
+    sf2: getField(p, ['SF2', 'sf2']),
+    sf3: getField(p, ['SF3', 'sf3']),
+    sf4: getField(p, ['SF4', 'sf4']),
 
-    mistrz:
-      p.Mistrz ??
-      p.mistrz ??
-      p.Champion ??
-      p.champion ??
-      p['Mistrz świata'] ??
-      p['Mistrz Świata'] ??
-      '',
+    mistrz: getField(p, [
+      'Mistrz',
+      'mistrz',
+      'Mistrz świata',
+      'Mistrz Świata',
+      'Champion',
+      'champion'
+    ]),
 
     punktyPolfinalisci: toNumber(
-      p['Punkty półfinaliści'] ??
-      p.punktyPolfinalisci ??
-      0
+      getField(p, ['Punkty półfinaliści', 'Punkty polfinalisci', 'punktyPolfinalisci'])
     ),
 
     punktyMistrz: toNumber(
-      p['Punkty mistrz'] ??
-      p.punktyMistrz ??
-      0
+      getField(p, ['Punkty mistrz', 'punktyMistrz'])
     ),
 
     razem: toNumber(
-      p.Razem ??
-      p.razem ??
-      0
+      getField(p, ['Razem', 'razem'])
     ),
   }))
   .filter((p) => p.gracz);
