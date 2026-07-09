@@ -627,14 +627,33 @@ function BettingTab({ darkMode }) {
   }
 
   return (
-    <div className="player-panel-full">
-      <iframe
-        title="Panel gracza"
-        src={iframeUrl || APPS_SCRIPT_URL}
-        className="player-panel"
-      />
+  <div className="card betting-open-card">
+    <div className="betting-open-icon">
+      <LogIn size={34} />
     </div>
-  );
+
+    <h2>Panel gracza</h2>
+
+    <p>
+      Panel typowania zostanie otwarty w osobnej karcie.
+    </p>
+
+    <button
+      type="button"
+      className="open-player-panel-btn"
+      onClick={() => {
+        window.open(
+          iframeUrl || APPS_SCRIPT_URL,
+          "_blank",
+          "noopener,noreferrer"
+        );
+      }}
+    >
+      <LogIn size={18} />
+      Otwórz panel gracza
+    </button>
+  </div>
+);
 }
 
 function TypesTab({ data }) {
